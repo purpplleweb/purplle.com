@@ -262,6 +262,7 @@ if (require.main === module) {
   init(process.env.MONGODB_URI).then(() => {
     app.use('/api/chat', router);
     app.get('/health', (q, r) => r.json({ ok: true }));
+    const chat = require('./chat-server'); app.set('trust proxy', 1); chat.init(process.env.MONGODB_URI).then(() => { app.use('/api/chat', chat.router); });
     app.listen(process.env.PORT || 3000, () => console.log('chat server on', process.env.PORT || 3000));
   });
 }
