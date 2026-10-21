@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Seller Inbox</title>
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#efeae2;color:#111}
+button{font:inherit;cursor:pointer}
+.login{height:100%;display:grid;place-items:center;padding:16px;background:#008069}
+.login form{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.login h1{margin:0 0 4px;font-size:20px}.login p{margin:0 0 16px;color:#667781;font-size:13.5px}
+.login label{display:block;font-size:12.5px;font-weight:600;color:#54656f;margin:12px 0 4px}
+.login input{width:100%;padding:11px 12px;border:1px solid #cfd8dc;border-radius:8px;font:inherit}
+.login button{margin-top:18px;width:100%;padding:12px;border:0;border-radius:8px;background:#00a884;color:#fff;font-weight:700}
+.err{color:#d93025;font-size:13px;margin-top:10px;min-height:18px}
+.app{height:100%;display:none;grid-template-columns:340px 1fr}
+.app.on{display:grid}
+.side{background:#fff;border-right:1px solid #e3e3e3;display:flex;flex-direction:column;min-height:0}
+.side header{background:#008069;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.side header button{background:none;border:0;color:#fff;font-size:13px;opacity:.9}
+.list{overflow-y:auto;flex:1}
+.conv{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer;align-items:center}
+.conv:hover,.conv.on{background:#f0f2f5}
+.conv img{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#ddd;flex:none}
+.conv .t{flex:1;min-width:0}
+.conv b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
+.conv span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#667781;font-size:13px}
+.conv .u{background:#00a884;color:#fff;border-radius:999px;min-width:20px;height:20px;padding:0 6px;font-size:12px;font-weight:700;display:grid;place-items:center}
+.empty{padding:40px 20px;text-align:center;color:#667781}
+.main{display:flex;flex-direction:column;min-height:0;min-width:0}
+.main header{background:#008069;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center}
+.main header img{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#fff}
+.main header b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main header small{opacity:.85}
+.back{display:none;background:none;border:0;color:#fff;font-size:22px;padding:0 6px}
+.msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background-image:radial-gradient(rgba(0,0,0,.045) 1px,transparent 1.2px);background-size:18px 18px}
+.none{margin:auto;color:#667781;text-align:center;padding:20px}
+.b{max-width:75%;padding:6px 9px 4px;border-radius:8px;box-shadow:0 1px 1px rgba(0,0,0,.13);word-wrap:break-word;overflow-wrap:anywhere;white-space:pre-wrap;position:relative}
+.b.in{align-self:flex-start;background:#fff;border-top-left-radius:0}
+.b.out{align-self:flex-end;background:#d9fdd3;border-top-right-radius:0}
+.b i{display:block;text-align:right;font-style:normal;font-size:11px;color:#667781;margin-top:2px;white-space:nowrap}
+.b i.seen{color:#53bdeb}
+.b img{max-width:150px;display:block}
+.b.stk{background:none;box-shadow:none;padding:0}
+.b audio{max-width:240px;height:36px}
+.b .del{font-style:italic;color:#667781}
+.b .x{position:absolute;top:2px;right:4px;border:0;background:rgba(255,255,255,.85);border-radius:50%;width:20px;height:20px;line-height:18px;font-size:13px;padding:0;color:#667781;opacity:0}
+.b:hover .x,.b .x:focus{opacity:1}
+@media (hover:none){.b .x{opacity:.7}}
+.sep{align-self:center;background:#fff;color:#54656f;font-size:12px;padding:3px 10px;border-radius:8px;margin:6px 0;box-shadow:0 1px 1px rgba(0,0,0,.1)}
+.send{display:flex;gap:8px;padding:8px 10px;background:#f0f2f5}
+.send input{flex:1;min-width:0;border:0;border-radius:22px;padding:12px 16px;font:inherit;outline:0}
+.send button{width:46px;height:46px;border:0;border-radius:50%;background:#00a884;color:#fff;font-size:18px}
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.dlg div{background:#fff;border-radius:14px;padding:20px 20px 8px;width:100%;max-width:320px}
+.dlg h4{margin:0 0 8px;font-size:17px}
+.dlg button{display:block;margin-left:auto;background:none;border:0;color:#00856f;font-weight:700;padding:10px 8px}
+.dlg .bad{color:#d93025}
+@media (max-width:760px){
+ .app{grid-template-columns:1fr}
+ .app .main{display:none}
+ .app.thread .side{display:none}.app.thread .main{display:flex}
+ .back{display:block}
+}
+</style>
+</head>
+<body>
+<div class="login" id="login">
+ <form id="lf">
+  <h1>Seller Inbox</h1>
+  <p>Reply to customer chats from your website.</p>
+  <label for="api">Chat server address</label>
+  <input id="api" value="https://yathra-chat.onrender.com/api/chat" autocomplete="off">
+  <label for="key">Seller password (ADMIN_KEY)</label>
+  <input id="key" type="password" autocomplete="current-password" required>
+  <button>Open inbox</button>
+  <div class="err" id="err"></div>
+ </form>
+</div>
+<div class="app" id="app">
+ <div class="side">
+  <header><span>Customer chats</span><button id="out">Log out</button></header>
+  <div class="list" id="list"></div>
+ </div>
+ <div class="main">
+  <header><button class="back" id="back" aria-label="Back">&#8592;</button><img id="pimg" alt=""><div style="min-width:0"><b id="pname">Select a chat</b><small id="pprice"></small></div></header>
+  <div class="msgs" id="msgs"><div class="none">Pick a customer chat on the left.</div></div>
+  <form class="send" id="sf" style="display:none"><input id="txt" placeholder="Type a reply" autocomplete="off" maxlength="2000"><button aria-label="Send">&#10148;</button></form>
+ </div>
+</div>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var API='',KEY='',cid=null,cursor=0,msgs={},timers=[];
+  try{API=localStorage.getItem('seller:api')||'';KEY=sessionStorage.getItem('seller:key')||''}catch(e){}
+  if(API)$('api').value=API;
+  function http(method,path,body){
+    var o={method:method,headers:{'x-admin-key':KEY}};
+    if(body){o.headers['Content-Type']='application/json';o.body=JSON.stringify(body)}
+    return fetch(API+'/admin'+path,o).then(function(r){if(!r.ok){var e=new Error('HTTP '+r.status);e.status=r.status;throw e}return r.json()});
+  }
+  function uid(){try{return crypto.randomUUID()}catch(e){return 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,10)}}
+  function tm(t){return new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+  function dayKey(t){var d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()}
+  function dayLabel(t){var n=Date.now();if(dayKey(t)===dayKey(n))return 'Today';if(dayKey(t)===dayKey(n-864e5))return 'Yesterday';return new Date(t).toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'})}
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  $('lf').onsubmit=function(e){
+    e.preventDefault();API=$('api').value.trim().replace(/\/+$/,'');KEY=$('key').value.trim();$('err').textContent='';
+    http('GET','/conversations').then(function(){
+      try{localStorage.setItem('seller:api',API);sessionStorage.setItem('seller:key',KEY)}catch(x){}
+      start();
+    }).catch(function(er){$('err').textContent=er.status===401?'Wrong seller password.':'Could not reach the server. Check the address and try again (the first try can take up to a minute).'});
+  };
+  $('out').onclick=function(){try{sessionStorage.removeItem('seller:key')}catch(e){}location.reload()};
+  function start(){
+    $('login').style.display='none';$('app').classList.add('on');
+    loadList();timers.push(setInterval(loadList,4000));timers.push(setInterval(poll,2500));
+  }
+  if(API&&KEY){http('GET','/conversations').then(start).catch(function(){})}
+
+  function loadList(){
+    http('GET','/conversations').then(function(r){
+      var l=$('list');
+      if(!r.conversations.length){l.innerHTML='<div class="empty">No customer chats yet.</div>';return}
+      l.innerHTML='';
+      r.conversations.forEach(function(c){
+        var d=document.createElement('div');d.className='conv'+(c.id===cid?' on':'');
+        var last=c.last?(c.last.deleted?'Message deleted':c.last.type==='sticker'?'Sticker':c.last.type==='voice'?'Voice message':c.last.text):'';
+        var unread=(c.unread&&c.id!==cid)?'<div class="u">'+c.unread+'</div>':'';
+        d.innerHTML='<img alt="" src="'+(c.image||'').replace(/"/g,'')+'"><div class="t"><b>'+esc(c.productName||'Product')+'</b><span>'+esc(last)+'</span></div>'+unread;
+        d.onclick=function(){openConv(c)};l.appendChild(d);
+      });
+    }).catch(function(){});
+  }
+  function openConv(c){
+    cid=c.id;cursor=0;msgs={};$('msgs').innerHTML='';
+    $('pname').textContent=c.productName||'Product';$('pprice').textContent=c.price?'₹'+c.price:'';$('pimg').src=c.image||'';
+    $('sf').style.display='flex';$('app').classList.add('thread');loadList();poll();$('txt').focus();
+  }
+  $('back').onclick=function(){$('app').classList.remove('thread');cid=null;loadList()};
+  function poll(){
+    if(!cid)return;var c=cid;
+    http('GET','/conversations/'+c+'/messages?since='+cursor).then(function(r){
+      if(c!==cid)return;
+      if(r.cursor)cursor=r.cursor;
+      r.messages.forEach(function(m){msgs[m.id]=m});
+      if(r.messages.length)render();
+    }).catch(function(){});
+  }
+  function render(){
+    var box=$('msgs'),near=box.scrollHeight-box.scrollTop-box.clientHeight<100;
+    var arr=Object.keys(msgs).map(function(k){return msgs[k]}).filter(function(m){return !m.hidden}).sort(function(a,b){return a.at-b.at});
+    box.innerHTML='';
+    if(!arr.length){box.innerHTML='<div class="none">No messages yet.</div>';return}
+    var last='';
+    arr.forEach(function(m){
+      var k=dayKey(m.at);if(k!==last){var s=document.createElement('div');s.className='sep';s.textContent=dayLabel(m.at);box.appendChild(s);last=k}
+      var mine=m.sender==='seller',b=document.createElement('div');b.className='b '+(mine?'out':'in');
+      var body;
+      if(m.deleted){body=document.createElement('span');body.className='del';body.textContent=mine?'You deleted this message':'This message was deleted'}
+      else if(m.type==='sticker'){body=document.createElement('img');body.src=m.media;body.alt='Sticker';b.classList.add('stk')}
+      else if(m.type==='voice'){body=document.createElement('audio');body.controls=true;body.preload='none';body.src=m.media}
+      else{body=document.createElement('span');body.textContent=m.text}
+      b.appendChild(body);
+      var i=document.createElement('i');i.textContent=tm(m.at)+(mine?(m.status==='seen'?' ✓✓':m.status==='delivered'?' ✓✓':' ✓'):'');if(mine&&m.status==='seen')i.className='seen';b.appendChild(i);
+      var x=document.createElement('button');x.className='x';x.type='button';x.setAttribute('aria-label','Delete message');x.textContent='×';x.onclick=function(){askDel(m)};b.appendChild(x);
+      box.appendChild(b);
+    });
+    if(near||box.dataset.first!==cid){box.scrollTop=box.scrollHeight;box.dataset.first=cid}
+  }
+  function askDel(m){
+    var d=document.createElement('div');d.className='dlg';var inner=document.createElement('div');d.appendChild(inner);
+    inner.innerHTML='<h4>Delete message?</h4>';
+    function btn(t,cls,fn){var b=document.createElement('button');b.textContent=t;if(cls)b.className=cls;b.onclick=function(){d.remove();if(fn)fn()};inner.appendChild(b)}
+    if(m.sender==='seller'&&!m.deleted&&Date.now()-m.at<48*3600*1000)btn('Delete for everyone','',function(){del(m,'all')});
+    btn('Delete for me','',function(){del(m,'me')});btn('Cancel','bad');
+    d.onclick=function(e){if(e.target===d)d.remove()};document.body.appendChild(d);
+  }
+  function del(m,scope){
+    http('POST','/conversations/'+cid+'/messages/'+m.id+'/delete',{scope:scope}).then(function(){cursor=0;poll()}).catch(function(e){alert(e.status===403?'Too late to delete for everyone.':'Could not delete. Try again.')});
+  }
+  $('sf').onsubmit=function(e){
+    e.preventDefault();var t=$('txt').value.trim();if(!t||!cid)return;$('txt').value='';
+    http('POST','/conversations/'+cid+'/messages',{id:uid(),type:'text',text:t,at:Date.now()}).then(function(r){msgs[r.message.id]=r.message;render();$('msgs').scrollTop=$('msgs').scrollHeight;loadList()}).catch(function(){$('txt').value=t;alert('Message not sent. Check your connection.')});
+  };
+})();
+</script>
+</body>
+</html>
