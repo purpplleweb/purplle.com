@@ -60,6 +60,30 @@ button{font:inherit;cursor:pointer}
 .dlg h4{margin:0 0 8px;font-size:17px}
 .dlg button{display:block;margin-left:auto;background:none;border:0;color:#00856f;font-weight:700;padding:10px 8px}
 .dlg .bad{color:#d93025}
+
+.send{position:relative;align-items:center}
+.send .ic{width:42px;height:42px;background:none;color:#54656f;font-size:22px;padding:0;border:0;border-radius:50%;flex:none}
+.send .ic:hover{background:#e4e7ea}
+.send .ic.on{color:#d93025}
+.send .rec{display:none;flex:1;align-items:center;gap:10px;background:#fff;border-radius:22px;padding:0 8px 0 14px;height:46px}
+.send .rec .dot{width:10px;height:10px;border-radius:50%;background:#e53935;animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.25}}
+.send .rec b{flex:1;font-variant-numeric:tabular-nums;font-weight:600}
+.send .rec button{border:0;background:none;font-size:20px;color:#d93025;width:36px;height:36px;border-radius:50%;padding:0}
+.send.recording input,.send.recording #stb,.send.recording #mic{display:none}
+.send.recording .rec{display:flex}
+.panel{display:none;background:#fff;border-top:1px solid #e3e3e3}
+.panel.on{display:block}
+.ptabs{display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid #eee;align-items:center}
+.ptabs button{border:0;background:none;padding:6px 12px;border-radius:8px;font-weight:700;color:#667781;font-size:13.5px}
+.ptabs button.on{background:#e7f6f2;color:#00a884}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;max-height:210px;overflow-y:auto;padding:8px}
+.pgrid button{border:0;background:none;border-radius:12px;padding:4px;aspect-ratio:1}
+.pgrid button:hover{background:#f0f2f5}
+.pgrid img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+.pgrid .add{border:2px dashed #b8c4cb;color:#00a884;font-size:30px}
+.pgrid .em{grid-column:1/-1;text-align:center;color:#667781;padding:24px 10px;font-size:13px}
+.pgrid .rm{position:relative}
 @media (max-width:760px){
  .app{grid-template-columns:1fr}
  .app .main{display:none}
@@ -87,14 +111,105 @@ button{font:inherit;cursor:pointer}
   <div class="list" id="list"></div>
  </div>
  <div class="main">
-  <header><button class="back" id="back" aria-label="Back">&#8592;</button><img id="pimg" alt=""><div style="min-width:0"><b id="pname">Select a chat</b><small id="pprice"></small></div></header>
+  <header><button class="back" id="back" aria-label="Back">&#8592;</button><img id="pimg" alt="" onerror="this.style.visibility='hidden'" onload="this.style.visibility='visible'"><div style="min-width:0"><b id="pname">Select a chat</b><small id="pprice"></small></div></header>
   <div class="msgs" id="msgs"><div class="none">Pick a customer chat on the left.</div></div>
-  <form class="send" id="sf" style="display:none"><input id="txt" placeholder="Type a reply" autocomplete="off" maxlength="2000"><button aria-label="Send">&#10148;</button></form>
+  <div class="panel" id="panel"><div class="ptabs"><button type="button" data-t="pip" class="on">Pip</button><button type="button" data-t="mine">My stickers</button></div><div class="pgrid" id="pgrid"></div></div>
+  <form class="send" id="sf" style="display:none"><button type="button" class="ic" id="stb" aria-label="Stickers">&#128578;</button><input id="txt" placeholder="Type a reply" autocomplete="off" maxlength="2000"><div class="rec"><span class="dot"></span><b id="rt">0:00</b><button type="button" id="rc" aria-label="Cancel recording">&#128465;</button></div><button type="button" class="ic" id="mic" aria-label="Record voice message">&#127908;</button><button id="sbtn" aria-label="Send">&#10148;</button></form>
+  <input type="file" id="file" accept="image/*" multiple hidden>
  </div>
 </div>
 <script>
 (function(){
   var $=function(i){return document.getElementById(i)};
+  var C1='#9b5de5',C2='#7a3dc4',DK='#2b1646',BEL='#ead8ff',PK='#ff8fb1',YL='#ffd23f',RD='#ff5d73',BL='#5ec8ff';
+  function S(o,tag,at,f){return '<'+tag+' '+at+(o?' fill="#fff" stroke="#fff" stroke-width="30" stroke-linejoin="round"':' fill="'+f+'"')+'/>'}
+  function ell(o,x,y,rx,ry,f,r){return S(o,'ellipse','cx="'+x+'" cy="'+y+'" rx="'+rx+'" ry="'+ry+'"'+(r?' transform="rotate('+r+' '+x+' '+y+')"':''),f)}
+  function pth(o,d,f,tr){return S(o,'path','d="'+d+'"'+(tr?' transform="'+tr+'"':''),f)}
+  function rct(o,x,y,w,h,rx,f,r){return S(o,'rect','x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+rx+'"'+(r?' transform="rotate('+r+' '+(x+w/2)+' '+(y+h/2)+')"':''),f)}
+  function ln(o,d,w,c,tr){return o?'':'<path d="'+d+'" fill="none" stroke="'+(c||DK)+'" stroke-width="'+(w||9)+'" stroke-linecap="round" stroke-linejoin="round"'+(tr?' transform="'+tr+'"':'')+'/>'}
+  function txt(o,x,y,s,size,f,rot){return '<text x="'+x+'" y="'+y+'" font-size="'+size+'" font-weight="900" font-family="Arial Black,Arial,Helvetica,sans-serif" text-anchor="middle"'+(rot?' transform="rotate('+rot+' '+x+' '+y+')"':'')+(o?' fill="#fff" stroke="#fff" stroke-width="30" stroke-linejoin="round"':' fill="'+f+'"')+'>'+s+'</text>'}
+  var HEART='M0 14C-34-10-24-40 0-20C24-40 34-10 0 14Z',STAR='M0-24L7-8L24-7L11 4L15 22L0 12L-15 22L-11 4L-24-7L-7-8Z',SPARK='M0-22Q3-3 22 0Q3 3 0 22Q-3 3-22 0Q-3-3 0-22Z';
+  function at(x,y,s){return 'translate('+x+' '+y+') scale('+s+')'}
+  function arms(o,t){
+    if(t==='up')return ell(o,96,214,30,52,C1,-28)+ell(o,416,214,30,52,C1,28);
+    if(t==='wave')return ell(o,108,306,30,48,C1,24)+ell(o,424,212,30,54,C1,34);
+    if(t==='thumb')return ell(o,108,306,30,48,C1,24)+ell(o,408,292,36,44,C1,-8)+ell(o,428,236,17,36,C1,10);
+    return ell(o,108,306,30,48,C1,24)+ell(o,404,306,30,48,C1,-24);
+  }
+  var EL=[205,262],ER=[307,262];
+  function eyes(t){
+    function open(p,s){return ell(0,p[0],p[1],27*s,33*s,'#fff')+ell(0,p[0]+2,p[1]+(t==='sad'?-3:4),15*s,19*s,DK)+ell(0,p[0]+8,p[1]-4,5,5,'#fff')}
+    if(t==='heart')return pth(0,HEART,RD,at(EL[0],EL[1]+2,1.5))+pth(0,HEART,RD,at(ER[0],ER[1]+2,1.5));
+    if(t==='happy')return ln(0,'M176 270Q205 224 234 270',11)+ln(0,'M278 270Q307 224 336 270',11);
+    if(t==='star')return pth(0,STAR,YL,at(EL[0],EL[1],1.7))+pth(0,STAR,YL,at(ER[0],ER[1],1.7));
+    if(t==='wide')return open(EL,1.2)+open(ER,1.2);
+    if(t==='sleep')return ln(0,'M178 258Q205 284 232 258',10)+ln(0,'M280 258Q307 284 334 258',10);
+    if(t==='wink')return open(EL,1)+ln(0,'M280 270Q307 228 334 270',11);
+    return open(EL,1)+open(ER,1);
+  }
+  function mouth(t){
+    if(t==='grin')return pth(0,'M204 316Q256 408 308 316Q256 334 204 316Z','#5a1f3d')+ell(0,256,372,24,13,'#ff8fa3');
+    if(t==='o')return ell(0,256,352,21,28,'#5a1f3d');
+    if(t==='frown')return ln(0,'M218 356Q256 322 294 356',10);
+    if(t==='tiny')return ln(0,'M232 336Q256 352 280 336',9);
+    return ln(0,'M212 328Q256 376 300 328',10);
+  }
+  var PIP=[
+   {cap:'Hello!',e:'open',m:'grin',a:'wave',p:function(o){return ln(o,'M470 150q14 14 0 32M488 134q26 32 0 64',9)+ln(o,'M30 120q-12 14 0 30',9)}},
+   {cap:'Love it!',e:'heart',m:'smile',p:function(o){return pth(o,HEART,RD,at(74,130,1.5))+pth(o,HEART,PK,at(452,112,1.2))+pth(o,HEART,RD,at(256,62,1))+pth(o,HEART,PK,at(430,214,.8))}},
+   {cap:'Thank you',e:'happy',m:'smile',p:function(o){return ell(o,236,384,27,36,C1,-22)+ell(o,276,384,27,36,C1,22)+pth(o,SPARK,YL,at(86,160,1.4))+pth(o,SPARK,YL,at(436,120,1.1))+pth(o,SPARK,YL,at(410,230,.7))}},
+   {cap:'Yay!',e:'happy',m:'grin',a:'up',p:function(o){return rct(o,60,96,22,12,3,RD,-30)+rct(o,430,60,22,12,3,BL,25)+rct(o,300,34,22,12,3,YL,10)+ell(o,170,60,9,9,PK)+ell(o,372,96,9,9,YL)+ell(o,40,190,8,8,BL)+ell(o,478,200,8,8,RD)+rct(o,140,24,20,11,3,BL,-50)+rct(o,460,128,20,11,3,PK,40)}},
+   {cap:'Sounds good',e:'wink',m:'smile',a:'thumb',p:function(o){return pth(o,SPARK,YL,at(70,150,1.1))+pth(o,SPARK,YL,at(462,150,.8))}},
+   {cap:'Wow!',e:'wide',m:'o',p:function(o){return ln(o,'M256 78v-40M184 92l-22-34M328 92l22-34M118 128l-34-20M394 128l34-20',11,YL)}},
+   {cap:'Tell me more',e:'open',m:'tiny',p:function(o){return ln(0,'M280 214q27-20 54-2',9)+txt(o,432,150,'?',130,YL,14)+txt(0,432,150,'?',130,YL,14)}},
+   {cap:'Sorry',e:'sad',m:'frown',p:function(o){return ln(0,'M176 216q28-18 56 0M280 216q28-18 56 0',9)+pth(o,'M172 316C150 346 156 366 172 366C188 366 194 346 172 316Z',BL)}},
+   {cap:'Later?',e:'sleep',m:'tiny',p:function(o){return txt(o,400,150,'z',70,BL,-8)+txt(o,448,108,'Z',86,BL,-8)+txt(o,372,60,'z',50,BL,-8)}},
+   {cap:'Add to bag',e:'happy',m:'smile',p:function(o){return rct(o,330,300,106,118,12,RD)+ln(o,'M362 304v-30q0-26 21-26t21 26v30',10,DK)+ln(o,'M356 354q28 22 56 0',9,'#fff')}},
+   {cap:'On its way',e:'open',m:'grin',p:function(o){return rct(o,176,332,160,112,10,'#d9a066')+rct(o,236,332,40,112,0,'#f1c27d')+ln(o,'M28 330h96M10 372h82M40 414h74',11,BL)}},
+   {cap:'Best deal',e:'star',m:'grin',p:function(o){return rct(o,336,92,140,84,18,YL,-14)+ln(o,'M356 128l22 20',0)+txt(o,408,150,'%',64,DK,-14)+pth(o,SPARK,PK,at(66,150,1.3))+pth(o,SPARK,YL,at(120,66,.9))}}
+  ];
+  function pipSvg(d){
+    function layer(o){
+      var s=ell(o,140,168,40,40,C1)+ell(o,372,168,40,40,C1);
+      if(!o)s+=ell(0,140,170,22,22,'#f6bddb')+ell(0,372,170,22,22,'#f6bddb');
+      s+=ell(o,200,420,52,28,C2)+ell(o,312,420,52,28,C2)+arms(o,d.a)+ell(o,256,288,152,140,C1);
+      if(!o)s+=ell(0,256,338,92,70,BEL)+ell(0,160,318,20,15,PK)+ell(0,352,318,20,15,PK)+eyes(d.e)+mouth(d.m);
+      return s+d.p(o);
+    }
+    var g=' transform="translate(256 226) scale(.8) translate(-256 -280)"',sz=Math.min(62,Math.floor(470/(d.cap.length*.66)));
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g'+g+'>'+layer(true)+'</g><g'+g+'>'+layer(false)+'</g>'+txt(true,256,486,d.cap,sz)+txt(false,256,486,d.cap,sz,DK)+'</svg>';
+  }
+  var pipCache={};
+  function pipSrc(i){return pipCache[i]||(pipCache[i]='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(pipSvg(PIP[i])))}
+
+  function idb(){return new Promise(function(res,rej){if(!window.indexedDB)return rej(new Error('no idb'));var q=indexedDB.open('pchat-stk',1);q.onupgradeneeded=function(){q.result.createObjectStore('mine',{keyPath:'id'})};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}
+  function idbDo(mode,fn){return idb().then(function(db){return new Promise(function(res,rej){var tx=db.transaction('mine',mode),r=fn(tx.objectStore('mine'));tx.oncomplete=function(){res(r&&r.result)};tx.onerror=tx.onabort=function(){rej(tx.error)}})})}
+
+  function makeSticker(file){
+    return new Promise(function(res,rej){
+      var url=URL.createObjectURL(file),im=new Image();
+      im.onload=function(){
+        URL.revokeObjectURL(url);
+        var N=512,P=34,box=N-P*2,w=im.naturalWidth,h=im.naturalHeight;if(!w||!h)return rej();
+        var k=Math.min(box/w,box/h),dw=Math.round(w*k),dh=Math.round(h*k),dx=Math.round((N-dw)/2),dy=Math.round((N-dh)/2);
+        var a=document.createElement('canvas');a.width=dw;a.height=dh;var ax=a.getContext('2d');ax.drawImage(im,0,0,dw,dh);
+        var opaque=true;try{var d=ax.getImageData(0,0,dw,dh).data;for(var i=3;i<d.length;i+=4*37){if(d[i]<250){opaque=false;break}}}catch(e){}
+        if(opaque){ /* photo: round the corners so the border looks like a sticker */
+          var r=Math.round(Math.min(dw,dh)*.14);ax.globalCompositeOperation='destination-in';ax.beginPath();
+          ax.moveTo(r,0);ax.arcTo(dw,0,dw,dh,r);ax.arcTo(dw,dh,0,dh,r);ax.arcTo(0,dh,0,0,r);ax.arcTo(0,0,dw,0,r);ax.closePath();ax.fill();ax.globalCompositeOperation='source-over';
+        }
+        var sil=document.createElement('canvas');sil.width=dw;sil.height=dh;var sx=sil.getContext('2d');sx.drawImage(a,0,0);sx.globalCompositeOperation='source-in';sx.fillStyle='#fff';sx.fillRect(0,0,dw,dh);
+        var c=document.createElement('canvas');c.width=c.height=N;var x=c.getContext('2d');
+        x.shadowColor='rgba(0,0,0,.28)';x.shadowBlur=8;x.shadowOffsetY=3;
+        for(var q=0;q<28;q++){var an=q/28*6.2832;x.drawImage(sil,dx+Math.cos(an)*13,dy+Math.sin(an)*13)}
+        x.shadowColor='transparent';x.drawImage(a,dx,dy);
+        var out=c.toDataURL('image/webp',.9);if(out.indexOf('image/webp')<0)out=c.toDataURL('image/png');
+        res(out);
+      };
+      im.onerror=function(){URL.revokeObjectURL(url);rej()};im.src=url;
+    });
+  }
+
   var API='',KEY='',cid=null,cursor=0,msgs={},timers=[];
   try{API=localStorage.getItem('seller:api')||'';KEY=sessionStorage.getItem('seller:key')||''}catch(e){}
   if(API)$('api').value=API;
@@ -132,7 +247,7 @@ button{font:inherit;cursor:pointer}
         var d=document.createElement('div');d.className='conv'+(c.id===cid?' on':'');
         var last=c.last?(c.last.deleted?'Message deleted':c.last.type==='sticker'?'Sticker':c.last.type==='voice'?'Voice message':c.last.text):'';
         var unread=(c.unread&&c.id!==cid)?'<div class="u">'+c.unread+'</div>':'';
-        d.innerHTML='<img alt="" src="'+(c.image||'').replace(/"/g,'')+'"><div class="t"><b>'+esc(c.productName||'Product')+'</b><span>'+esc(last)+'</span></div>'+unread;
+        d.innerHTML='<img alt="" onerror="this.style.visibility=\'hidden\'" src="'+(c.image||'').replace(/"/g,'')+'"><div class="t"><b>'+esc(c.productName||'Product')+'</b><span>'+esc(last)+'</span></div>'+unread;
         d.onclick=function(){openConv(c)};l.appendChild(d);
       });
     }).catch(function(){});
@@ -184,9 +299,62 @@ button{font:inherit;cursor:pointer}
   function del(m,scope){
     http('POST','/conversations/'+cid+'/messages/'+m.id+'/delete',{scope:scope}).then(function(){cursor=0;poll()}).catch(function(e){alert(e.status===403?'Too late to delete for everyone.':'Could not delete. Try again.')});
   }
+  function upload(blob){return fetch(API+'/admin/conversations/'+cid+'/media',{method:'POST',headers:{'x-admin-key':KEY,'Content-Type':blob.type||'application/octet-stream'},body:blob}).then(function(r){if(!r.ok){var e=new Error('HTTP '+r.status);e.status=r.status;throw e}return r.json()}).then(function(j){return j.url})}
+  function sendMsg(body){
+    if(!cid)return Promise.resolve();
+    body.id=uid();body.at=Date.now();
+    return http('POST','/conversations/'+cid+'/messages',body).then(function(r){msgs[r.message.id]=r.message;render();$('msgs').scrollTop=$('msgs').scrollHeight;loadList()}).catch(function(e){alert(e.status===413?'File is too large to send.':'Message not sent. Check your connection and try again.')});
+  }
   $('sf').onsubmit=function(e){
-    e.preventDefault();var t=$('txt').value.trim();if(!t||!cid)return;$('txt').value='';
-    http('POST','/conversations/'+cid+'/messages',{id:uid(),type:'text',text:t,at:Date.now()}).then(function(r){msgs[r.message.id]=r.message;render();$('msgs').scrollTop=$('msgs').scrollHeight;loadList()}).catch(function(){$('txt').value=t;alert('Message not sent. Check your connection.')});
+    e.preventDefault();if(rec){stopRec(true);return}var t=$('txt').value.trim();if(!t||!cid)return;$('txt').value='';
+    sendMsg({type:'text',text:t}).then(function(){});
+  };
+  /* ---- stickers ---- */
+  var upSt={},ptab='pip',MINE=[];
+  function rasterize(src){return new Promise(function(res,rej){var im=new Image();im.onload=function(){var c=document.createElement('canvas');c.width=c.height=512;c.getContext('2d').drawImage(im,0,0,512,512);c.toBlob(function(b){b?res(b):rej()},'image/webp',.92)};im.onerror=rej;im.src=src})}
+  function dataBlob(src){return fetch(src).then(function(r){return r.blob()})}
+  function sendSticker(key,src){
+    if(!cid)return;
+    var p=upSt[key]?Promise.resolve(upSt[key]):(src.indexOf('image/svg')>-1?rasterize(src):dataBlob(src)).then(upload).then(function(u){upSt[key]=u;return u});
+    p.then(function(u){return sendMsg({type:'sticker',media:u})}).catch(function(){alert('Could not send sticker. Try again.')});
+  }
+  function renderGrid(){
+    var g=$('pgrid');g.innerHTML='';
+    if(ptab==='pip'){PIP.forEach(function(d,i){var b=document.createElement('button');b.type='button';b.setAttribute('aria-label',d.cap);b.innerHTML='<img alt="">';b.firstChild.src=pipSrc(i);b.onclick=function(){sendSticker('pip:'+i,pipSrc(i))};g.appendChild(b)});return}
+    var a=document.createElement('button');a.type='button';a.className='add';a.textContent='+';a.setAttribute('aria-label','Create sticker from image');a.onclick=function(){$('file').value='';$('file').click()};g.appendChild(a);
+    MINE.forEach(function(it){var b=document.createElement('button');b.type='button';b.innerHTML='<img alt="">';b.firstChild.src=it.src;b.title='Click to send. Right-click or long-press to delete.';b.onclick=function(){sendSticker(it.id,it.src)};
+      b.oncontextmenu=function(e){e.preventDefault();if(confirm('Delete this sticker?'))idbDo('readwrite',function(s){return s.delete(it.id)}).then(function(){MINE=MINE.filter(function(x){return x.id!==it.id});renderGrid()})};g.appendChild(b)});
+    if(!MINE.length){var e=document.createElement('div');e.className='em';e.textContent='Tap + to turn any photo or image into a sticker. WhatsApp .webp stickers saved on your device work too.';g.appendChild(e)}
+  }
+  function loadMine(){return idbDo('readonly',function(s){return s.getAll()}).then(function(a){MINE=(a||[]).sort(function(x,y){return y.at-x.at});renderGrid()}).catch(function(){})}
+  $('file').onchange=function(){
+    var fl=Array.prototype.slice.call(this.files).filter(function(f){return /^image\//.test(f.type)}).slice(0,10);
+    fl.reduce(function(p,f){return p.then(function(){return makeSticker(f).then(function(src){var it={id:'u:'+uid(),src:src,at:Date.now()};return idbDo('readwrite',function(s){return s.put(it)}).then(function(){MINE.unshift(it)})}).catch(function(){})})},Promise.resolve()).then(renderGrid);
+  };
+  $('stb').onclick=function(){var on=!$('panel').classList.contains('on');$('panel').classList.toggle('on',on);if(on){renderGrid();loadMine()}};
+  Array.prototype.forEach.call(document.querySelectorAll('.ptabs button'),function(b){b.onclick=function(){ptab=b.getAttribute('data-t');Array.prototype.forEach.call(document.querySelectorAll('.ptabs button'),function(x){x.classList.toggle('on',x===b)});renderGrid()}});
+  /* ---- voice ---- */
+  var rec=null;
+  function fmt(s){s=Math.round(s);return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
+  function stopRec(send){if(!rec)return;rec.send=send;try{rec.mr.stop()}catch(e){}}
+  $('rc').onclick=function(){stopRec(false)};
+  $('mic').onclick=function(){
+    if(rec)return;
+    if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder)){alert('Voice messages are not supported on this browser.');return}
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      var mt='';['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg'].some(function(t){if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t)){mt=t;return true}});
+      var mr=mt?new MediaRecorder(stream,{mimeType:mt,audioBitsPerSecond:24000}):new MediaRecorder(stream);
+      var r=rec={mr:mr,chunks:[],t0:Date.now(),send:false};
+      mr.ondataavailable=function(e){if(e.data&&e.data.size)r.chunks.push(e.data)};
+      mr.onstop=function(){
+        clearInterval(r.iv);stream.getTracks().forEach(function(t){t.stop()});$('sf').classList.remove('recording');rec=null;
+        var dur=(Date.now()-r.t0)/1000;if(!r.send)return;if(dur<0.7){alert('Recording too short.');return}
+        var blob=new Blob(r.chunks,{type:(mr.mimeType||mt||'audio/webm').split(';')[0]});
+        upload(blob).then(function(u){return sendMsg({type:'voice',media:u,dur:Math.min(dur,120)})}).catch(function(){alert('Could not send voice message. Try again.')});
+      };
+      mr.start();$('rt').textContent='0:00';$('sf').classList.add('recording');
+      r.iv=setInterval(function(){var s=(Date.now()-r.t0)/1000;$('rt').textContent=fmt(s);if(s>=60)stopRec(true)},250);
+    }).catch(function(){alert('Allow microphone access to send voice messages.')});
   };
 })();
 </script>
