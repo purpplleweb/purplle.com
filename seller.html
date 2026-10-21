@@ -247,14 +247,14 @@ button{font:inherit;cursor:pointer}
         var d=document.createElement('div');d.className='conv'+(c.id===cid?' on':'');
         var last=c.last?(c.last.deleted?'Message deleted':c.last.type==='sticker'?'Sticker':c.last.type==='voice'?'Voice message':c.last.text):'';
         var unread=(c.unread&&c.id!==cid)?'<div class="u">'+c.unread+'</div>':'';
-        d.innerHTML='<img alt="" onerror="this.style.visibility=\'hidden\'" src="'+(c.image||'').replace(/"/g,'')+'"><div class="t"><b>'+esc(c.productName||'Product')+'</b><span>'+esc(last)+'</span></div>'+unread;
+        d.innerHTML='<img alt="" onerror="this.style.visibility=\'hidden\'" src="'+(c.image||'').replace(/"/g,'')+'"><div class="t"><b>'+esc(c.customerName||'Customer')+'</b><span style="color:#00856f;font-size:12px">'+esc(c.productName||'Product')+'</span><span>'+esc(last)+'</span></div>'+unread;
         d.onclick=function(){openConv(c)};l.appendChild(d);
       });
     }).catch(function(){});
   }
   function openConv(c){
     cid=c.id;cursor=0;msgs={};$('msgs').innerHTML='';
-    $('pname').textContent=c.productName||'Product';$('pprice').textContent=c.price?'₹'+c.price:'';$('pimg').src=c.image||'';
+    $('pname').textContent=c.customerName||'Customer';$('pprice').textContent=(c.productName||'Product')+(c.price?' · ₹'+c.price:'');$('pimg').src=c.image||'';
     $('sf').style.display='flex';$('app').classList.add('thread');loadList();poll();$('txt').focus();
   }
   $('back').onclick=function(){$('app').classList.remove('thread');cid=null;loadList()};
